@@ -1,0 +1,40 @@
+#service
+apiVersion: v1
+kind: Service
+metadata:
+  name: news-app
+  namespace: news
+spec:
+  selector:
+    app: news
+  ports:
+  - protocol: TCP
+    port: 7575
+    targetPort: 7575
+  type: LoadBalancer
+
+#deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: news-app-deployment
+  namespace: news
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: news
+  template:
+    metadata:
+      labels:
+        app: news
+    spec:
+      containers:
+      - name: news-app-container
+        # Place the patient docker image here
+        image: sanjeev24bhatt/news-app:0.3
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 7575
+        # env-name is used to access env-value in project to call other servies [DNS NAME (must be same as service name)]
