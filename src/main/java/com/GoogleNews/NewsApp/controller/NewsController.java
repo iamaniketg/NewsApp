@@ -19,7 +19,7 @@ public class NewsController {
 
 
 @GetMapping("/fetch-news")
-public List<Map<String, String>> fetchNews(@RequestParam String searchTerm) {
+public List<Map<String, String>> fetchNews(@RequestParam String searchTerm) throws Exception {
     return newsScraperService.fetchNewsUrls(searchTerm);
 }
 
