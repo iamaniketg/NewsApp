@@ -19,35 +19,45 @@ import java.util.Map;
 @Service
 public class NewsScraperService {
 
+    /**
+     * Fetches news article URLs based on the provided search term from Google News.
+     * The method navigates to Google News, searches for the given term,
+     * captures a screenshot of the search results, and extracts URLs from the articles.
+     *
+     * @param searchTerm The search term to query news articles.
+     * @return A list of maps containing article URLs.
+     */
     public List<Map<String, String>> fetchNewsUrls(String searchTerm) {
         List<Map<String, String>> newsUrls = new ArrayList<>();
 
         try (Playwright playwright = Playwright.create()) {
+            log.info("Starting Playwright and launching browser in non-headless mode.");
             Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(false));
             BrowserContext context = browser.newContext();
             Page page = context.newPage();
 
             // Navigate to Google News
-            System.out.println("Navigating to Google News...");
+            log.info("Navigating to Google News...");
             page.navigate("https://news.google.com/");
             page.waitForTimeout(10000);
 
             // Search for the term
-            System.out.println("Searching for: " + searchTerm);
+            log.info("Searching for term: {}", searchTerm);
             page.waitForSelector("input[type='text']", new Page.WaitForSelectorOptions().setTimeout(60000));
             page.fill("input[type='text']", searchTerm);
             page.keyboard().press("Enter");
 
             // Wait for search results to load
+            log.info("Waiting for search results to load...");
             page.waitForTimeout(10000);
-            System.out.println("Search results loaded.");
 
             // Capture screenshot after loading search results
-            System.out.println("Capturing screenshot...");
+            log.info("Capturing screenshot of search results...");
             page.screenshot(new Page.ScreenshotOptions().setPath(Paths.get("search_results.png")).setFullPage(true));
-            System.out.println("Screenshot saved as 'search_results.png'.");
+            log.info("Screenshot saved as 'search_results.png'.");
 
             // Get article URLs
+            log.info("Extracting article URLs...");
             List<ElementHandle> articles = page.querySelectorAll("article a");
 
             // Reverse loop through the articles
@@ -59,16 +69,18 @@ public class NewsScraperService {
                     String fullUrl = "https://news.google.com" + url;
                     newsItem.put("url", fullUrl);
                     newsUrls.add(newsItem);
-//                System.out.println("Found URL: " + fullUrl);
+                    log.info("Found URL: {}", fullUrl);
                 }
             }
+
+            log.info("Finished extracting {} URLs.", newsUrls.size());
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error occurred while fetching news URLs: ", e);
         }
 
         return newsUrls;
     }
-
-
-
 }
+
+
+
