@@ -1,6 +1,7 @@
 package com.GoogleNews.NewsApp.service;
 import com.GoogleNews.NewsApp.utility.ResourceNotFoundException;
 import com.GoogleNews.NewsApp.utility.ScraperConstants;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.BrowserType;
@@ -10,11 +11,10 @@ import com.microsoft.playwright.Playwright;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 @Slf4j
@@ -32,6 +32,7 @@ public class NewsScraperService {
      */
     public List<Map<String, String>> fetchNewsUrls(String searchTerm) throws Exception {
         List<Map<String, String>> newsUrls = new ArrayList<>();
+        Set<String> seenUrls = new HashSet<>();  // To track duplicate URLs
 
         try (Playwright playwright = Playwright.create()) {
             log.info(ScraperConstants.PLAYWRIGHT_BROWSER_STARTED);
@@ -42,7 +43,7 @@ public class NewsScraperService {
             // Navigate to Google News
             log.info(ScraperConstants.NAVIGATING_TO_GOOGLE_NEWS);
             page.navigate(ScraperConstants.GOOGLE_NEWS_URL);
-            page.waitForTimeout(ScraperConstants.DEFAULT_WAIT_TIMEOUT);
+//            page.waitForTimeout(ScraperConstants.DEFAULT_WAIT_TIMEOUT);
 
             // Search for the term
             log.info(ScraperConstants.SEARCHING_FOR_TERM, searchTerm);
@@ -59,26 +60,34 @@ public class NewsScraperService {
             page.screenshot(new Page.ScreenshotOptions().setPath(Paths.get(ScraperConstants.SEARCH_RESULTS_SCREENSHOT)).setFullPage(true));
             log.info(ScraperConstants.SCREENSHOT_SAVED, ScraperConstants.SEARCH_RESULTS_SCREENSHOT);
 
-            // Get article URLs
-            log.info(ScraperConstants.EXTRACTING_URLS);
+            // Get article URLs and Titles
+            log.info(ScraperConstants.EXTRACTING_URLS_AND_TITLES);
             List<ElementHandle> articles = page.querySelectorAll(ScraperConstants.ARTICLE_ANCHOR_SELECTOR);
 
             // Reverse loop through the articles
             for (int i = articles.size() - 1; i >= 0; i--) {
                 ElementHandle article = articles.get(i);
                 String url = article.getAttribute(ScraperConstants.HREF_ATTRIBUTE);
-                if (url != null && !url.contains(ScraperConstants.GOOGLE_URL_FRAGMENT)) { // Exclude Google-related links
-                    Map<String, String> newsItem = new HashMap<>();
+                String title = article.innerText();// Assume the title is the text inside the anchor tag
+                // Only add articles with non-empty titles and valid URLs
+                if (url != null && !url.contains(ScraperConstants.GOOGLE_URL_FRAGMENT) && title != null && !title.trim().isEmpty()) {
                     String fullUrl = ScraperConstants.GOOGLE_NEWS_PREFIX + url;
-                    newsItem.put(ScraperConstants.URL_KEY, fullUrl);
-                    newsUrls.add(newsItem);
-                    log.info(ScraperConstants.URL_FOUND, fullUrl);
+
+                    // Check if the URL is already added (to avoid duplicates)
+                    if (!seenUrls.contains(fullUrl)) {
+                        Map<String, String> newsItem = new HashMap<>();
+                        newsItem.put(ScraperConstants.TITLE_KEY, title);
+                        newsItem.put(ScraperConstants.URL_KEY, fullUrl);
+                        newsUrls.add(newsItem);
+                        seenUrls.add(fullUrl);  // Mark this URL as seen
+                        log.info(ScraperConstants.URL_AND_TITLE_FOUND, fullUrl, title);
+                    }
                 }
             }
 
-            log.info(ScraperConstants.EXTRACTED_URLS_COUNT, newsUrls.size());
+            log.info(ScraperConstants.EXTRACTED_URLS_AND_TITLES_COUNT, newsUrls.size());
         } catch (Exception e) {
-            log.error(ScraperConstants.ERROR_FETCHING_NEWS_URLS, e);
+            log.error(ScraperConstants.ERROR_FETCHING_NEWS_URLS_AND_TITLES, e);
             throw e;  // Throwing exception to be handled by global exception handler
         }
 

@@ -40,4 +40,9 @@ public class ScraperConstants {
 
     // Controller constants
     public static final String FETCH_NEWS_REQUEST_RECEIVED = "Received request to fetch news for search term: {}";
+    public static final String TITLE_KEY = "title";
+    public static final String EXTRACTING_URLS_AND_TITLES = "Extracting article URLs and titles.";
+    public static final String URL_AND_TITLE_FOUND = "Found URL: {}, Title: {}";
+    public static final String EXTRACTED_URLS_AND_TITLES_COUNT = "Extracted {} article URLs and titles.";
+    public static final String ERROR_FETCHING_NEWS_URLS_AND_TITLES = "Error while fetching news URLs and titles.";
 }
