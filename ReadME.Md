@@ -71,7 +71,7 @@ kubectl logs -f --follow -n <namespace> <podname>
 ```
 7. To delete deployment:- go at file path
 ```bash
-kubectl delete -f filename.yaml
+kubectl delete -f news-app.yaml
 ```
 
 ### Swagger url:-
