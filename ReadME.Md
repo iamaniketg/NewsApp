@@ -59,7 +59,7 @@ docker push userName/news-app:0.1
 
 4. Run the yaml file and use proper image name
 ```bash
-Kubectl apply -f filename.yaml
+Kubectl apply -f news-app.yaml
 ```
 5. To create namespace:-
 ```bash
